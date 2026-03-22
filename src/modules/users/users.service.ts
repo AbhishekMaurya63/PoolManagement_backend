@@ -32,9 +32,10 @@ export class UsersService {
   }
 
   async findById(id: string) {
-    const user = await this.userModel.findById(id).select('-password');
+    console.log(id);
+    const user = await this.userModel.findById(id).select('-password').populate('locationId','name address city state');
     if (!user) throw new NotFoundException('User not found');
-    return user;
+    return {};
   }
 
   async update(id: string, dto: any) {

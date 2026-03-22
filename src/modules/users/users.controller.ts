@@ -5,11 +5,12 @@ import {
   Param,
   Patch,
   Post,
+  Req,
   UseGuards,
 } from '@nestjs/common';
 
 import { UsersService } from './users.service';
-import { CreateUserDto,UpdateUserDto } from './dto/create-user.dto';
+import { CreateUserDto,UpdateUserDto, UserRole } from './dto/create-user.dto';
 
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/role.decorater';
@@ -22,36 +23,42 @@ export class UsersController {
 
   // 👑 ADMIN ONLY
   @Post()
-  @Roles('admin')
+  @Roles(UserRole.ADMIN)
   create(@Body() dto: CreateUserDto) {
     return this.service.create(dto);
   }
 
   // 👑 ADMIN ONLY
   @Get()
-  @Roles('admin')
+  @Roles(UserRole.ADMIN)
   findAll() {
     return this.service.findAll();
   }
 
   // 👑 ADMIN ONLY
   @Get(':id')
-  @Roles('admin')
+  @Roles(UserRole.ADMIN)
   findById(@Param('id') id: string) {
     return this.service.findById(id);
   }
 
   // 👑 ADMIN ONLY
   @Patch(':id')
-  @Roles('admin')
+  @Roles(UserRole.ADMIN)
   update(@Param('id') id: string, @Body() dto: UpdateUserDto) {
     return this.service.update(id, dto);
   }
 
   // 👑 ADMIN ONLY
   @Patch(':id/toggle-status')
-  @Roles('admin')
+ @Roles(UserRole.ADMIN)
   toggleStatus(@Param('id') id: string) {
     return this.service.toggleStatus(id);
+  }
+  
+@Get('profile/me')
+  getProfile(@Req() req:any) {
+    console.log('Getting profile for user ID:', req.user);
+    return this.service.findById(req.user.userId);
   }
 }
