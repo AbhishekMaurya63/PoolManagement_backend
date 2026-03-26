@@ -5,16 +5,20 @@ import {
   UseInterceptors,
   Delete,
   Param,
+  UseGuards,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ImageService } from './image.service';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
+import { RolesGuard } from 'src/common/guards/roles.guard';
+import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
+import { UserRole } from '../users/entity/user.entity';
+import { Roles } from 'src/common/decorators/role.decorater';
 
 @Controller('images')
 export class ImageController {
   constructor(private readonly imageService: ImageService) {}
-
   @Post('upload')
   @UseInterceptors(
     FileInterceptor('file', {
@@ -41,6 +45,8 @@ export class ImageController {
     );
   }
 
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.STAFF, UserRole.TRAINER)
   @Delete(':filename')
   async delete(@Param('filename') filename: string) {
     return this.imageService.deleteFromHostinger(filename);

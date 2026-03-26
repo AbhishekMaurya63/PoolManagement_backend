@@ -29,27 +29,27 @@ export class StudentsController {
   }
 
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(UserRole.ADMIN, UserRole.STAFF)
+@Roles(UserRole.ADMIN, UserRole.STAFF, UserRole.TRAINER)
 @Get()
 findAll(@Req() req: any, @Query() query: any) {
   return this.service.findAll(req.user, query);
 }
 
-  @UseGuards(JwtAuthGuard)
-  @Roles(UserRole.ADMIN, UserRole.STAFF)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.STAFF, UserRole.TRAINER)
   @Get('student-id/:studentId')
   findByStudentId(@Param('studentId') studentId: string) {
     return this.service.findByStudentId(studentId);
   }
 
-  @UseGuards(JwtAuthGuard) 
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN, UserRole.STAFF)
   @Get('registration-id/:registrationId')
   findByRegistrationId(@Param('registrationId') registrationId: string) {
     return this.service.findByRegistrationId(registrationId);
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN, UserRole.STAFF)
   @Patch(':id/toggle-status')
   toggleStatus(@Param('id') id: string) {

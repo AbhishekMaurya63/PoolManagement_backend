@@ -29,6 +29,7 @@ export class PaymentsController {
 
   // 🔍 Get active payment
   @Get('active/:registrationId')
+  @Roles(UserRole.ADMIN, UserRole.STAFF)
   getActive(@Param('registrationId') registrationId: string) {
     return this.service.getActivePayment(registrationId);
   }
