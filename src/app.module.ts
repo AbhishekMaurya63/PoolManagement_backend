@@ -3,18 +3,26 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ConfigModule } from '@nestjs/config';
 import { ImagesModule } from './modules/upload/image.module';
-import { DatabaseModule } from './database/database.module';
 import { LocationsModule } from './modules/locations/locations.module';
 import { UsersModule } from './modules/users/users.module';
 import { AuthModule } from './modules/auth/auth.module';
-
+import { TypeOrmModule } from '@nestjs/typeorm';
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
     }),
+    TypeOrmModule.forRoot({
+  type: 'mysql',
+  host: 'srv2209.hstgr.io', // e.g. srv123.hostinger.com
+  port: 3306,
+  username: 'u988170382_squaSportPool',
+  password: 'Typerandom@#321',
+  database: 'u988170382_squaSportPool',
+  autoLoadEntities: true,
+  synchronize: true, // ⚠️ only for development
+}),
     AuthModule,
-    DatabaseModule,
     LocationsModule,
     UsersModule,
     ImagesModule,

@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Get,
@@ -10,7 +11,7 @@ import {
 } from '@nestjs/common';
 
 import { UsersService } from './users.service';
-import { CreateUserDto,UpdateUserDto, UserRole } from './dto/create-user.dto';
+import { CreateUserDto, UpdateUserDto, UserRole } from './dto/create-user.dto';
 
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/role.decorater';
@@ -19,7 +20,7 @@ import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 @Controller('users')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class UsersController {
-  constructor(private readonly service: UsersService) {}
+  constructor(private readonly service: UsersService) { }
 
   // 👑 ADMIN ONLY
   @Post()
@@ -28,17 +29,19 @@ export class UsersController {
     return this.service.create(dto);
   }
 
-  // 👑 ADMIN ONLY
+
   @Get()
   @Roles(UserRole.ADMIN)
-  findAll() {
-    return this.service.findAll();
+  findAll(@Req() req: any) {
+    return this.service.findAll(req.query);
   }
+
 
   // 👑 ADMIN ONLY
   @Get(':id')
   @Roles(UserRole.ADMIN)
   findById(@Param('id') id: string) {
+    console.log('Finding user by ID:', id); // 🔥 Debug log
     return this.service.findById(id);
   }
 
@@ -51,14 +54,18 @@ export class UsersController {
 
   // 👑 ADMIN ONLY
   @Patch(':id/toggle-status')
- @Roles(UserRole.ADMIN)
+  @Roles(UserRole.ADMIN)
   toggleStatus(@Param('id') id: string) {
     return this.service.toggleStatus(id);
   }
-  
-@Get('profile/me')
-  getProfile(@Req() req:any) {
-    console.log('Getting profile for user ID:', req.user);
+
+  @Get('profile/me')
+  getProfile(@Req() req: any) {
+    if (!req.user || !req.user.userId) {
+      throw new BadRequestException('Invalid user token');
+    }
     return this.service.findById(req.user.userId);
   }
+
+
 }

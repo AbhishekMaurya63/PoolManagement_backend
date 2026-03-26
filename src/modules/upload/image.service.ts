@@ -7,11 +7,6 @@ export class ImageService {
 
   async uploadToHostinger(localPath: string, filename: string) {
     const client = new ftp.Client();
-    console.log('Uploading to Hostinger with FTP credentials:', {
-      host: process.env.FTP_HOST,
-      user: process.env.FTP_USER,
-      port: process.env.FTP_PORT,
-    });
     try {
       await client.access({
         host: process.env.FTP_HOST,
@@ -20,11 +15,15 @@ export class ImageService {
         port: Number(process.env.FTP_PORT),
         secure: false,
       });
+      await client.cd('domains');
+      await client.cd('storage.aquasportsbbnacademy.com');
+      await client.cd('public_html');
 
-      const remotePath = `/public_html/uploads/${filename}`;
+      // ensure uploads exists
+      await client.ensureDir('uploads');
 
-      await client.uploadFrom(localPath, remotePath);
-
+      await client.uploadFrom(localPath, filename);
+      console.log(await client.pwd(), "1");
       return {
         url: `${process.env.BASE_URL}/uploads/${filename}`,
         filename,
@@ -50,7 +49,14 @@ export class ImageService {
         secure: false,
       });
 
-      await client.remove(`/public_html/uploads/${filename}`);
+      // 🔥 Navigate step-by-step (same as upload)
+      await client.cd('domains');
+      await client.cd('aquasportsbbnacademy.com');
+      await client.cd('public_html');
+      await client.cd('uploads');
+
+      // 🔥 Delete file
+      await client.remove(filename);
 
       return { message: 'Deleted successfully' };
 

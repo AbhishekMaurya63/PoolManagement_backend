@@ -1,44 +1,57 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import { Location, LocationDocument } from './schemas/location.schema';
-import { Model } from 'mongoose';
-import { CreateLocationDto,UpdateLocationDto } from './dto/create-location.dto';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Location } from './entity/location.entity';
+import { Repository } from 'typeorm';
+import { CreateLocationDto, UpdateLocationDto } from './dto/create-location.dto';
 
 @Injectable()
 export class LocationsService {
   constructor(
-    @InjectModel(Location.name)
-    private locationModel: Model<LocationDocument>,
+    @InjectRepository(Location)
+    private locationRepo: Repository<Location>,
   ) {}
 
   async create(dto: CreateLocationDto) {
-    return this.locationModel.create(dto);
+    const location = this.locationRepo.create(dto);
+    return await this.locationRepo.save(location);
   }
 
-  async findAll(user:any) {
-    if(user.role === 'admin'){
-      return this.locationModel.find().sort({ createdAt: -1 });
+  async findAll(user: any) {
+    if (user.role === 'admin') {
+      return this.locationRepo.find({
+        order: { createdAt: 'DESC' },
+      });
     }
-    return this.locationModel.find({ isActive: true }).sort({ createdAt: -1 });
+
+    return this.locationRepo.find({
+      where: { isActive: true },
+      order: { createdAt: 'DESC' },
+    });
   }
 
   async findById(id: string) {
-    const location = await this.locationModel.findById(id);
-    if (!location) throw new NotFoundException('Location not found');
+    const location = await this.locationRepo.findOne({ where: { id } });
+
+    if (!location) {
+      throw new NotFoundException('Location not found');
+    }
+
     return location;
   }
 
   async update(id: string, dto: UpdateLocationDto) {
-    const updated = await this.locationModel.findByIdAndUpdate(id, dto, {
-      new: true,
-    });
-    if (!updated) throw new NotFoundException('Location not found');
-    return updated;
+    const location = await this.findById(id);
+
+    Object.assign(location, dto);
+
+    return await this.locationRepo.save(location);
   }
 
   async toggleActive(id: string) {
     const location = await this.findById(id);
+
     location.isActive = !location.isActive;
-    return location.save();
+
+    return await this.locationRepo.save(location);
   }
 }
