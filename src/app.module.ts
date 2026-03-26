@@ -7,6 +7,7 @@ import { LocationsModule } from './modules/locations/locations.module';
 import { UsersModule } from './modules/users/users.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { StudentsModule } from './modules/students/students.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -26,6 +27,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
     LocationsModule,
     UsersModule,
     ImagesModule,
+    StudentsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
