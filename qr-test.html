@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>QR Attendance Scanner</title>
+  <script src="https://unpkg.com/html5-qrcode"></script>
+  <style>
+    body {
+      font-family: Arial;
+      text-align: center;
+      padding: 20px;
+    }
+    #reader {
+      width: 300px;
+      margin: auto;
+    }
+    #result {
+      margin-top: 20px;
+      padding: 10px;
+      border-radius: 8px;
+    }
+    .success { background: #d4edda; color: #155724; }
+    .error { background: #f8d7da; color: #721c24; }
+  </style>
+</head>
+
+<body>
+
+<h2>📷 Scan QR for Attendance</h2>
+
+<div id="reader"></div>
+
+<div id="result"></div>
+
+<script>
+  const API_URL = "http://localhost:3000/attendance/scan";
+  const TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI3NjM3NWJkYy0wMTI3LTRkODAtYWQyZi1jZWUyYmQzMDZmODgiLCJyb2xlIjoiYWRtaW4iLCJsb2NhdGlvbklkIjoiNDA2MjBiNjUtNDBlOC00NGJjLThlMjktYmFhNmJhNmJiYWQ0IiwiaWF0IjoxNzc0NTU0NzI0LCJleHAiOjE3NzUxNTk1MjR9.kfZnSmWZJtYxjep3CWeBxKW3Tj0UctpsbnQnyfBvjvY";
+
+  function onScanSuccess(decodedText) {
+    console.log("QR Data:", decodedText);
+
+    try {
+      const parsed = JSON.parse(decodedText);
+      const token = parsed.token;
+
+      if (!token) {
+        showError("Invalid QR format");
+        return;
+      }
+
+      // Stop scanner after success
+      html5QrCode.stop();
+
+      // Call backend API
+      fetch(API_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${TOKEN}`
+        },
+        body: JSON.stringify({ token })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.message) {
+          showSuccess(`
+            ✅ ${data.message} <br/>
+            👤 ${data.student?.name || "Student"} <br/>
+          `);
+        } else {
+          showError(JSON.stringify(data));
+        }
+      })
+      .catch(err => {
+        showError(err.message);
+      });
+
+    } catch (e) {
+      showError("QR parsing failed");
+    }
+  }
+
+  function showSuccess(msg) {
+    const el = document.getElementById("result");
+    el.className = "success";
+    el.innerHTML = msg;
+  }
+
+  function showError(msg) {
+    const el = document.getElementById("result");
+    el.className = "error";
+    el.innerHTML = "❌ " + msg;
+  }
+
+  const html5QrCode = new Html5Qrcode("reader");
+
+  Html5Qrcode.getCameras().then(devices => {
+    if (devices.length) {
+      html5QrCode.start(
+        devices[0].id,
+        { fps: 10, qrbox: 250 },
+        onScanSuccess
+      );
+    }
+  });
+</script>
+
+</body>
+</html>

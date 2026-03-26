@@ -47,13 +47,17 @@ export class AuthService {
 
     const payload = {
       sub: user.id, 
+      studentId: user.studentId, // ✅ now using SQL id
+      role: 'student',
       locationId: user.locationId,
     };
 
     return {
       access_token: this.jwtService.sign(payload),
       user: {
-        id: user.id, // ✅ FIXED
+        id: user.id, 
+        studentId: user.studentId,
+        role: 'student',
         name: user.name,
         locationId: user.locationId,
       },

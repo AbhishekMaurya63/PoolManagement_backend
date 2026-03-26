@@ -15,7 +15,9 @@ export class PaymentsService {
     private repo: Repository<Payment>,
     private studentService: StudentsService,
   ) {}
-
+  generateStudentId(): string {
+    return 'STU-' + Date.now();
+  }
   // 🔥 Create Payment
   async create(dto: any) {
     const student = await this.studentService.findByRegistrationId(dto.registrationId);
@@ -44,7 +46,7 @@ export class PaymentsService {
       validFrom: now,
       validTill,
     });
-    await this.studentService.activateStudent(dto.registrationId, validTill);
+    await this.studentService.activateStudent(dto.registrationId);
     return this.repo.save(payment);
   }
 
@@ -193,4 +195,5 @@ async findAll(user: any, query: any) {
     data,
   };
 }
+
 }

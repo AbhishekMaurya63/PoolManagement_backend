@@ -9,6 +9,8 @@ import { AuthModule } from './modules/auth/auth.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { StudentsModule } from './modules/students/students.module';
 import { PaymentsModule } from './modules/payments/payments.module';
+import { AttendanceModule } from './modules/attendance/attendance.module';
+import { QRModule } from './modules/qr/qr.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -30,6 +32,8 @@ import { PaymentsModule } from './modules/payments/payments.module';
     ImagesModule,
     StudentsModule,
     PaymentsModule,
+    QRModule,
+    AttendanceModule,
   ],
   controllers: [AppController],
   providers: [AppService],

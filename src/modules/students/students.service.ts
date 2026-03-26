@@ -48,8 +48,8 @@ async create(dto: any) {
     ...dto,
     dob: dto.dob,
     password: hashedPassword,
-    studentId: this.generateStudentId(),
     registrationId: this.generateRegistrationId(),
+    studentId: this.generateStudentId(),
   });
 
   const saved = await this.repo.save(student);
@@ -202,7 +202,7 @@ async create(dto: any) {
     student.isActive = !student.isActive;
     return this.repo.save(student);
   }
- async activateStudent(registrationId: string, validTill: Date) {
+ async activateStudent(registrationId: string) {
     return this.repo
       .createQueryBuilder()
       .update(Student)
