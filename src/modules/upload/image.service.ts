@@ -23,7 +23,6 @@ export class ImageService {
       await client.ensureDir('uploads');
 
       await client.uploadFrom(localPath, filename);
-      console.log(await client.pwd(), "1");
       return {
         url: `${process.env.BASE_URL}/uploads/${filename}`,
         filename,

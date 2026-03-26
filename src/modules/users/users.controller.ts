@@ -41,7 +41,6 @@ export class UsersController {
   @Get(':id')
   @Roles(UserRole.ADMIN)
   findById(@Param('id') id: string) {
-    console.log('Finding user by ID:', id); // 🔥 Debug log
     return this.service.findById(id);
   }
 

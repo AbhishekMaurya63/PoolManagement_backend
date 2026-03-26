@@ -8,6 +8,7 @@ import { UsersModule } from './modules/users/users.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { StudentsModule } from './modules/students/students.module';
+import { PaymentsModule } from './modules/payments/payments.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -28,6 +29,7 @@ import { StudentsModule } from './modules/students/students.module';
     UsersModule,
     ImagesModule,
     StudentsModule,
+    PaymentsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
