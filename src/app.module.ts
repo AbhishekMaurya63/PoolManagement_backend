@@ -11,6 +11,7 @@ import { StudentsModule } from './modules/students/students.module';
 import { PaymentsModule } from './modules/payments/payments.module';
 import { AttendanceModule } from './modules/attendance/attendance.module';
 import { QRModule } from './modules/qr/qr.module';
+import { StatsModule } from './modules/stats/stats.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -34,6 +35,7 @@ import { QRModule } from './modules/qr/qr.module';
     PaymentsModule,
     QRModule,
     AttendanceModule,
+    StatsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

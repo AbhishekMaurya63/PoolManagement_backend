@@ -58,6 +58,12 @@ export class UsersController {
     return this.service.toggleStatus(id);
   }
 
+  @Patch(':id/changePassword')
+  @Roles(UserRole.ADMIN)
+  changePassword(@Param('id') id: string, @Body() dto: any) {
+    return this.service.changePassword(id, dto);
+  }
+
   @Get('profile/me')
   getProfile(@Req() req: any) {
     if (!req.user || !req.user.userId) {

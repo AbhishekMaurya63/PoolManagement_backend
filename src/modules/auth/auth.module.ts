@@ -5,6 +5,7 @@ import { AuthController } from './auth.controller';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { UsersModule } from '../users/users.module';
 import { StudentsModule } from '../students/students.module';
+import { LocationsModule } from '../locations/locations.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { StudentsModule } from '../students/students.module';
     }),
     UsersModule,
     StudentsModule,
+    LocationsModule,
   ],
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy],

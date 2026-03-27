@@ -3,7 +3,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Between, Repository } from 'typeorm';
 import { Attendance } from './entities/attendance.entity';
 import { QRService } from '../qr/qr.service';
 
@@ -67,7 +67,24 @@ export class AttendanceService {
   };
   }
 
-    async getMyAttendance(query: any, user: any) {
+  async getStudentAttendance(studentId: string, user: any) {
+
+    const data = await this.repo.find({
+      where: {
+            studentId,
+        locationId: user.locationId,
+      },
+      relations: ['student', 'trainer', 'location'],
+      order: { createdAt: 'DESC' },
+    });
+
+    return {
+      total: data.length,
+      data,
+    };
+  }
+
+  async getMyAttendance(query: any, user: any) {
     const { page = 1 } = query;
     const [data, total] = await this.repo.findAndCount({
       where: { studentId: user.studentId },

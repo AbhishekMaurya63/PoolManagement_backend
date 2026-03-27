@@ -148,4 +148,13 @@ async findAll(query: any) {
         if (!qr) throw new NotFoundException('QR not found');
         return qr;
     }
+
+        async getQR(paymentId: string) {
+        const qr = await this.repo.findOne({
+            where: { paymentId },
+            relations: ['student', 'payment'],
+        });
+        if (!qr) throw new NotFoundException('QR not found');
+        return qr;
+    }
 }

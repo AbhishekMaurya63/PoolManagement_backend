@@ -34,6 +34,12 @@ export class PaymentsController {
     return this.service.getActivePayment(registrationId);
   }
 
+  @Get(':registrationId')
+  @Roles(UserRole.ADMIN, UserRole.STAFF)
+  getStudentsAllPayments(@Param('registrationId') registrationId: string) {
+    return this.service.getStudentsAllPayments(registrationId);
+  }
+
   @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(UserRole.ADMIN, UserRole.STAFF)
 @Get()

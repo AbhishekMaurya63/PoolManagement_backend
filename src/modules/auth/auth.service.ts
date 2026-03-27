@@ -3,13 +3,15 @@ import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { UsersService } from '../users/users.service';
 import { StudentsService } from '../students/students.service';
+import { LocationsService } from '../locations/locations.service';
 
 @Injectable()
 export class AuthService {
   constructor(
     private jwtService: JwtService,
     private usersService: UsersService,
-    private StudentsService: StudentsService
+    private StudentsService: StudentsService,
+    private locationsService: LocationsService
   ) {}
 
   async login(dto: any) {
@@ -20,11 +22,12 @@ export class AuthService {
 
     const isMatch = await bcrypt.compare(dto.password, user.password);
     if (!isMatch) throw new UnauthorizedException('Invalid password');
-
+    const location = await this.locationsService.findById(user.locationId);
     const payload = {
       sub: user.id, // ✅ FIXED
       role: user.role,
       locationId: user.locationId,
+      locationName: location.name,
     };
 
     return {
@@ -34,6 +37,7 @@ export class AuthService {
         name: user.name,
         role: user.role,
         locationId: user.locationId,
+        locationName: location.name,
       },
     };
   }
@@ -44,12 +48,13 @@ export class AuthService {
     if (!user.isActive) throw new UnauthorizedException('Student is not active');
     const isMatch = await bcrypt.compare(dto.password, user.password);
     if (!isMatch) throw new UnauthorizedException('Invalid password');
-
+    const location = await this.locationsService.findById(user.locationId);
     const payload = {
       sub: user.id, 
-      studentId: user.studentId, // ✅ now using SQL id
+      studentId: user.studentId, 
       role: 'student',
       locationId: user.locationId,
+      locationName: location.name,
     };
 
     return {
@@ -60,6 +65,7 @@ export class AuthService {
         role: 'student',
         name: user.name,
         locationId: user.locationId,
+        locationName: location.name,
       },
     };
   }

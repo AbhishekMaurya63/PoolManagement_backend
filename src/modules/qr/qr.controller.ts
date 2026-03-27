@@ -16,6 +16,12 @@ export class QRController {
     return this.service.generate(paymentId);
   }
 
+@Roles(UserRole.ADMIN, UserRole.STAFF)
+  @Get(':paymentId')
+  getQR(@Param('paymentId') paymentId: string) {
+    return this.service.getQR(paymentId);
+  }
+
   @Roles(UserRole.ADMIN, UserRole.STAFF)
   @Get('validate/:token')
   validate(@Param('token') token: string) {

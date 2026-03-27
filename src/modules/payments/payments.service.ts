@@ -60,7 +60,13 @@ export class PaymentsService {
       relations: ['student', 'location'],
     });
   }
-
+ async getStudentsAllPayments(registrationId: string) {
+    return this.repo.find({
+      where: { registrationId },
+      relations: ['student', 'location'],
+      order: { createdAt: 'DESC' },
+    });
+  }
   // 🔥 Validate Payment (Used in QR scan)
   async validatePayment(registrationId: string) {
     const payment = await this.getActivePayment(registrationId);
@@ -78,7 +84,6 @@ export class PaymentsService {
 
     return payment;
   }
-
 async findAll(user: any, query: any) {
   const {
     search,
@@ -98,7 +103,6 @@ async findAll(user: any, query: any) {
     .leftJoinAndSelect('payment.student', 'student')
     .leftJoinAndSelect('payment.location', 'location');
 
-  // 🔐 Role-based filtering
   if (user.role !== 'admin') {
     qb.andWhere('payment.locationId = :locationId', {
       locationId: user.locationId,
@@ -106,93 +110,128 @@ async findAll(user: any, query: any) {
   } else if (locationId) {
     qb.andWhere('payment.locationId = :locationId', { locationId });
   }
-
-  // 👤 Student filter
   if (studentId) {
     qb.andWhere('payment.studentId = :studentId', { studentId });
   }
-
-  // 💳 Payment mode filter
   if (paymentMode) {
     qb.andWhere('payment.paymentMode = :paymentMode', { paymentMode });
   }
-
-  // 🔍 Search (student fields)
   if (search) {
     qb.andWhere(
       `(student.name LIKE :search OR student.phone LIKE :search)`,
       { search: `%${search}%` },
     );
   }
-
-  // ✅ Active filter
   if (isActive !== undefined) {
     qb.andWhere('payment.isActive = :isActive', {
       isActive: isActive === 'true',
     });
   }
 
-  // 📅 DATE FILTERS
+  const IST_OFFSET = 5.5 * 60 * 60 * 1000;
+
+  const toUTC = (date: Date) => {
+    return new Date(date.getTime() - IST_OFFSET);
+  };
+
   const now = new Date();
 
+  let start: Date | null = null;
+  let end: Date | null = null;
+
   if (dateFilter === 'today') {
-    const start = new Date();
-    start.setHours(0, 0, 0, 0);
+    const s = new Date();
+    s.setHours(0, 0, 0, 0);
 
-    const end = new Date();
-    end.setHours(23, 59, 59, 999);
+    const e = new Date();
+    e.setHours(23, 59, 59, 999);
 
-    qb.andWhere('payment.createdAt BETWEEN :start AND :end', { start, end });
+    start = toUTC(s);
+    end = toUTC(e);
   }
 
   else if (dateFilter === 'week') {
-    const start = new Date(now);
-    start.setDate(now.getDate() - now.getDay());
-    start.setHours(0, 0, 0, 0);
+    const s = new Date();
+    s.setDate(s.getDate() - s.getDay()); // Sunday start
+    s.setHours(0, 0, 0, 0);
 
-    const end = new Date();
-    end.setHours(23, 59, 59, 999);
+    const e = new Date();
+    e.setHours(23, 59, 59, 999);
 
-    qb.andWhere('payment.createdAt BETWEEN :start AND :end', { start, end });
+    start = toUTC(s);
+    end = toUTC(e);
   }
 
   else if (dateFilter === 'month') {
-    const start = new Date(now.getFullYear(), now.getMonth(), 1);
-    const end = new Date();
+    const s = new Date(now.getFullYear(), now.getMonth(), 1);
+    s.setHours(0, 0, 0, 0);
 
-    qb.andWhere('payment.createdAt BETWEEN :start AND :end', { start, end });
+    const e = new Date();
+    e.setHours(23, 59, 59, 999);
+
+    start = toUTC(s);
+    end = toUTC(e);
   }
 
   else if (dateFilter === 'year') {
-    const start = new Date(now.getFullYear(), 0, 1);
-    const end = new Date();
+    const s = new Date(now.getFullYear(), 0, 1);
+    s.setHours(0, 0, 0, 0);
 
-    qb.andWhere('payment.createdAt BETWEEN :start AND :end', { start, end });
+    const e = new Date();
+    e.setHours(23, 59, 59, 999);
+
+    start = toUTC(s);
+    end = toUTC(e);
   }
 
-  // 🧠 Custom date range
   if (fromDate && toDate) {
-    const start = new Date(fromDate);
-    const end = new Date(toDate);
-    end.setHours(23, 59, 59, 999);
+    const s = new Date(fromDate);
+    s.setHours(0, 0, 0, 0);
 
-    qb.andWhere('payment.createdAt BETWEEN :start AND :end', { start, end });
+    const e = new Date(toDate);
+    e.setHours(23, 59, 59, 999);
+
+    start = toUTC(s);
+    end = toUTC(e);
+  }
+  if (start && end) {
+    qb.andWhere('payment.createdAt BETWEEN :start AND :end', {
+      start,
+      end,
+    });
   }
 
-  // 📄 Pagination
-  const skip = (page - 1) * limit;
+  const take = Math.min(Number(limit), 100);
+  const skip = (Number(page) - 1) * take;
 
-  qb.skip(skip).take(limit);
-
+  qb.skip(skip).take(take);
   qb.orderBy('payment.createdAt', 'DESC');
-
   const [data, total] = await qb.getManyAndCount();
+  const formatToIST = (date: Date) => {
+    const ist = new Date(date.getTime() + IST_OFFSET);
+
+    const y = ist.getFullYear();
+    const m = String(ist.getMonth() + 1).padStart(2, '0');
+    const d = String(ist.getDate()).padStart(2, '0');
+
+    const h = String(ist.getHours()).padStart(2, '0');
+    const min = String(ist.getMinutes()).padStart(2, '0');
+    const s = String(ist.getSeconds()).padStart(2, '0');
+
+    return `${y}-${m}-${d} ${h}:${min}:${s}`;
+  };
+
+  const formattedData = data.map((item) => ({
+    ...item,
+    createdAt: formatToIST(item.createdAt),
+  }));
 
   return {
     total,
     page: Number(page),
-    limit: Number(limit),
-    data,
+    limit: take,
+    totalPages: Math.ceil(total / take),
+    data: formattedData,
   };
 }
 

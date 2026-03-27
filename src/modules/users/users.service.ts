@@ -171,6 +171,13 @@ async update(id: string, dto: any) {
   }
 }
 
+async changePassword(id: string, dto: any) {
+  const user = await this.userRepo.findOne({ where: { id } });
+  if (!user) throw new NotFoundException('User not found'); 
+  user.password = await bcrypt.hash(dto.newPassword, 10);
+  return await this.userRepo.save(user);
+}
+
   async toggleStatus(id: string) {
     const user = await this.userRepo.findOne({ where: { id } });
     if (!user) throw new NotFoundException('User not found');
