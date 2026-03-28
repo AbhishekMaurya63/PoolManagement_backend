@@ -250,7 +250,7 @@ export class StatsService {
   // 💳 PAYMENT REPORT API
   // ============================================
   async getPaymentReport(query: any, user: any) {
-    const { filter = 'today', fromDate, toDate,locationId } = query;
+    const { filter = query.dateFilter, fromDate, toDate,locationId } = query;
     const { start, end } = this.getDateRange(filter, fromDate, toDate);
 
     // Get all payments with student details
