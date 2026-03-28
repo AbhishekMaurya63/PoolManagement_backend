@@ -180,4 +180,69 @@ async getTrainerStats(query: any, user: any) {
     },
   };
 }
+
+async getAdminStats(query: any) {
+  const { filter = query.dateFilter, fromDate, toDate,locationId } = query;
+    const { start, end } = this.getDateRange(filter, fromDate, toDate);
+    const totalRegistrations = await this.studentRepo.count({
+    where: {
+      locationId: locationId,
+      createdAt: Between(start, end),
+    },
+  });
+  const totalPayments = await this.paymentRepo.count({
+    where: {
+      locationId: locationId,
+      createdAt: Between(start, end),
+    },
+  });
+  const totalRevenue = await this.paymentRepo
+    .createQueryBuilder('payment')
+    .select('SUM(payment.amount)', 'total')
+    .where('payment.createdAt BETWEEN :start AND :end', { start, end })
+    .andWhere('payment.locationId = :locationId', {
+      locationId: locationId,
+    })
+    .getRawOne();
+
+  const totalRevenueAmount = Number(totalRevenue?.total) || 0;
+
+  const totalStudents = await this.studentRepo.count({
+    where: {
+      isActive: true,
+      locationId: locationId,
+      createdAt: Between(start, end),
+    },
+  });
+
+   const presentResult = await this.attendanceRepo
+    .createQueryBuilder('attendance')
+    .select('COUNT(DISTINCT attendance.studentId)', 'count')
+    .where('attendance.createdAt BETWEEN :start AND :end', { start, end })
+    .andWhere('attendance.locationId = :locationId', {
+      locationId:locationId,
+    })
+    .getRawOne();
+
+  const totalPresent = Number(presentResult.count) || 0;
+
+  // ✅ STEP 3: Calculate ABSENT
+  const totalAbsent = totalStudents - totalPresent;
+
+  return {
+    filter,
+    range: {
+      start,
+      end,
+    },
+    data: {
+      totalRegistrations,
+      totalPayments,
+      totalRevenue: totalRevenueAmount,
+      totalStudents,
+      totalPresent,
+      totalAbsent,
+    },
+  };
+}
 }

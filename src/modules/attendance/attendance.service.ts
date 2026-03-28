@@ -6,6 +6,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Between, Repository } from 'typeorm';
 import { Attendance } from './entities/attendance.entity';
 import { QRService } from '../qr/qr.service';
+import { formatToIST } from 'src/common/utils/localTime';
 
 @Injectable()
 export class AttendanceService {
@@ -59,11 +60,14 @@ export class AttendanceService {
     relations: ['student', 'trainer', 'location'],
     order: { createdAt: 'DESC' },
   });
-
+  const formattedData = data.map((item) => ({
+    ...item,
+    createdAt: formatToIST(item.createdAt),
+  }));
   return {
     date: selectedDate,
     total: data.length,
-    data,
+    data:formattedData,
   };
   }
 
@@ -77,10 +81,13 @@ export class AttendanceService {
       relations: ['student', 'trainer', 'location'],
       order: { createdAt: 'DESC' },
     });
-
+    const formattedData = data.map((item) => ({
+    ...item,
+    createdAt: formatToIST(item.createdAt),
+  }));
     return {
       total: data.length,
-      data,
+        data:formattedData,
     };
   }
 
