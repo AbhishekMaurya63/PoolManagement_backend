@@ -34,7 +34,8 @@ export class AttendanceController {
     return this.service.getMyAttendance(query, req.user);
   }
   @Get('studentId/:studentId')
+  @Roles(UserRole.ADMIN, UserRole.TRAINER)
   getStudentAttendance(@Param('studentId') studentId: string, @Req() req: any) {
-    return this.service.getStudentAttendance(studentId, req.user);
+    return this.service.getStudentAttendance(studentId, req);
   }
 }

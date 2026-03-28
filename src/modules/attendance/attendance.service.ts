@@ -54,8 +54,24 @@ export class AttendanceService {
   async getDailyAttendance(query: any, user: any) {
     const selectedDate =
     query.date || new Date().toISOString().split('T')[0];
-
-  const data = await this.repo.find({
+    
+    if(user.role === 'admin') {
+      const data = await this.repo.find({
+    where: { date: selectedDate, locationId: query.locationId },
+    relations: ['student', 'trainer', 'location'],
+    order: { createdAt: 'DESC' },
+  });
+  const formattedData = data.map((item) => ({
+    ...item,
+    createdAt: formatToIST(item.createdAt),
+  }));
+  return {
+    date: selectedDate,
+    total: data.length,
+    data:formattedData,
+  };// Admin can view attendance for all locations
+    } else {
+      const data = await this.repo.find({
     where: { date: selectedDate, locationId: user.locationId },
     relations: ['student', 'trainer', 'location'],
     order: { createdAt: 'DESC' },
@@ -69,14 +85,34 @@ export class AttendanceService {
     total: data.length,
     data:formattedData,
   };
+    }
+
+  
   }
 
-  async getStudentAttendance(studentId: string, user: any) {
-
+  async getStudentAttendance(studentId: string, req: any) {
+    if(req.user.role === 'admin') {
+        const data = await this.repo.find({
+      where: {
+            studentId,
+        locationId: req.query.locationId,
+      },
+      relations: ['student', 'trainer', 'location'],
+      order: { createdAt: 'DESC' },
+    });
+    const formattedData = data.map((item) => ({
+    ...item,
+    createdAt: formatToIST(item.createdAt),
+  }));
+    return {
+      total: data.length,
+        data:formattedData,
+    };
+    }
     const data = await this.repo.find({
       where: {
             studentId,
-        locationId: user.locationId,
+        locationId: req.user.locationId,
       },
       relations: ['student', 'trainer', 'location'],
       order: { createdAt: 'DESC' },
