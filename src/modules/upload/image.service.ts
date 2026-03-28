@@ -8,7 +8,7 @@ export class ImageService {
 async uploadToHostinger(file: string | Buffer, filename: string) {
 
   const client = new ftp.Client();
-
+  console.log(process.env.FTP_HOST, process.env.FTP_USER, process.env.FTP_PASSWORD, process.env.FTP_PORT);
   try {
     await client.access({
       host: process.env.FTP_HOST,
