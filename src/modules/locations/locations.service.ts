@@ -39,6 +39,12 @@ export class LocationsService {
     return location;
   }
 
+  async findAllPublic() {
+    return this.locationRepo.find({
+      where: { isActive: true },
+      order: { createdAt: 'DESC' },
+    });
+  }
   async update(id: string, dto: UpdateLocationDto) {
     const location = await this.findById(id);
 

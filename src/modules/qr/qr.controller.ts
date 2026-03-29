@@ -36,7 +36,7 @@ export class QRController {
 
   @Get('student/me')
   findById(@Req() req: any) {
-    const studentId = req.user.studentId;
-    return this.service.findById(studentId);
+    const userId = req.user.userId;
+    return this.service.findById(userId);
   }
 }

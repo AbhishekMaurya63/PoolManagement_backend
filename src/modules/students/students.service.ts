@@ -194,14 +194,14 @@ async findAll(user: any, query: any) {
   };
 }
 
-// async findById(id: string) {
-//     const student = await this.repo.findOne({
-//       where: { id },
-//       relations: ['location'],
-//     });
-//     if (!student) throw new NotFoundException('Student not found');
-//     return student;
-//   }
+async findById(id: string) {
+    const student = await this.repo.findOne({
+      where: { id },
+      relations: ['location'],
+    });
+    if (!student) throw new NotFoundException('Student not found');
+    return student;
+  }
 
 
   async findByStudentId(studentId: string) {

@@ -34,6 +34,12 @@ export class StudentsController {
 findAll(@Req() req: any, @Query() query: any) {
   return this.service.findAll(req.user, query);
 }
+@UseGuards(JwtAuthGuard)
+@Get('me')
+findMyDetails(@Req() req: any) {
+  console.log('Fetching details for user:', req.user);
+  return this.service.findById(req.user.userId);
+}
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN, UserRole.STAFF, UserRole.TRAINER)

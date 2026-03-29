@@ -7,6 +7,7 @@ import { Between, Repository } from 'typeorm';
 import { Attendance } from './entities/attendance.entity';
 import { QRService } from '../qr/qr.service';
 import { formatToIST } from 'src/common/utils/localTime';
+import { StudentsService } from '../students/students.service';
 
 @Injectable()
 export class AttendanceService {
@@ -14,6 +15,7 @@ export class AttendanceService {
     @InjectRepository(Attendance)
     private repo: Repository<Attendance>,
     private qrService: QRService,
+    private studentService: StudentsService,
   ) {}
 
   async markAttendance(token: string, user: any) {
@@ -128,10 +130,15 @@ export class AttendanceService {
   }
 
   async getMyAttendance(query: any, user: any) {
+    const existingStudent = await this.studentService.findById(user.userId);
+
+    if (!existingStudent) {
+      throw new BadRequestException('Student not found for current user');
+    }
     const { page = 1 } = query;
     const [data, total] = await this.repo.findAndCount({
-      where: { studentId: user.studentId },
-      relations: ['trainer', 'location'],
+      where: { studentId: existingStudent.studentId },
+      relations: ['trainer'],
       order: { createdAt: 'DESC' },
       skip: (page - 1) * 10,
       take: 10,

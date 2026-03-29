@@ -140,10 +140,14 @@ async findAll(query: any) {
   };
 }
 
-    async findById(studentId: string) {
+    async findById(userId: string) {
+      const student = await this.studentRepo.findOne({
+        where: { id: userId },
+      });
+      if (!student) throw new NotFoundException('Student not found');
+      console.log('Student found for userId:', student);
         const qr = await this.repo.findOne({
-            where: { studentId },
-            relations: ['student', 'payment'],
+            where: { studentId: student.studentId, isActive: true },
         });
         if (!qr) throw new NotFoundException('QR not found');
         return qr;

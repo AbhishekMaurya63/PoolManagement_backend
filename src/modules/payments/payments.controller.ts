@@ -46,4 +46,9 @@ export class PaymentsController {
 findAll(@Req() req: any, @Query() query: any) {
   return this.service.findAll(req.user, query);
 }
+
+@Get('getYourPayments/me')
+findMyPayments(@Req() req: any) {
+  return this.service.findMyPayments(req.user.userId);
+}
 }

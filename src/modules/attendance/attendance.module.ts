@@ -4,9 +4,9 @@ import { QRModule } from "../qr/qr.module";
 import { AttendanceService } from "./attendance.service";
 import { AttendanceController } from "./attendance.controller";
 import { Module } from "@nestjs/common";
-
+import { StudentsModule } from '../students/students.module';
 @Module({
-  imports: [TypeOrmModule.forFeature([Attendance]), QRModule],
+  imports: [TypeOrmModule.forFeature([Attendance]), QRModule, StudentsModule],
   providers: [AttendanceService],
   controllers: [AttendanceController],
 })

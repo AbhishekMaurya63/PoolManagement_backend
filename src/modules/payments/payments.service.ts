@@ -235,4 +235,18 @@ async findAll(user: any, query: any) {
   };
 }
 
+async findMyPayments(user: string) {
+ const existingStudent = await this.studentService.findById(user);
+
+  if (!existingStudent) {
+    throw new NotFoundException('Student not found');
+  }
+  const payments = await this.repo.find({
+    where: { registrationId: existingStudent.registrationId },
+    relations: ['student', 'location'],
+    order: { createdAt: 'DESC' },
+  });
+
+  return payments;
+}
 }
