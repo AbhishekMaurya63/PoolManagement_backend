@@ -23,6 +23,12 @@ export class Location {
   @Column({ nullable: true })
   state: string;
 
+  @Column({ nullable: true })
+  timing: string;
+
+  @Column({ nullable: true })
+  capacity: number;
+
   @Column({ default: true })
   isActive: boolean;
 

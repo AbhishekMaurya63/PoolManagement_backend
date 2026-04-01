@@ -135,19 +135,14 @@ export class AttendanceService {
     if (!existingStudent) {
       throw new BadRequestException('Student not found for current user');
     }
-    const { page = 1 } = query;
-    const [data, total] = await this.repo.findAndCount({
+    const res= await this.repo.findAndCount({
       where: { studentId: existingStudent.studentId },
       relations: ['trainer'],
       order: { createdAt: 'DESC' },
-      skip: (page - 1) * 10,
-      take: 10,
     });
 
     return {
-      page,
-      total,
-      data,
-    };
+      data: res[0],
+    }
 }
   }

@@ -1,4 +1,4 @@
-import { IsString } from 'class-validator';
+import { IsNumber, IsString } from 'class-validator';
 
 export class CreateLocationDto {
   @IsString()
@@ -12,6 +12,12 @@ export class CreateLocationDto {
 
   @IsString()
   state: string;
+
+  @IsString()
+  timing: string;
+
+  @IsNumber()
+  capacity: number;
 }
 import { PartialType } from '@nestjs/swagger';
 export class UpdateLocationDto extends PartialType(CreateLocationDto) {}
