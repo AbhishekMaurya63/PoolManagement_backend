@@ -91,6 +91,7 @@ async findAll(user: any, query: any) {
     studentId,
     paymentMode,
     isActive,
+    isFamilyPack,
     page = 1,
     limit = 10,
     dateFilter,
@@ -127,6 +128,11 @@ async findAll(user: any, query: any) {
       isActive: isActive === 'true',
     });
   }
+  if (isFamilyPack !== undefined) {
+    qb.andWhere('payment.isFamilyPack = :isFamilyPack', {
+      isFamilyPack: isFamilyPack === 'true',
+    });
+   }
 
   const IST_OFFSET = 5.5 * 60 * 60 * 1000;
 
@@ -139,7 +145,19 @@ async findAll(user: any, query: any) {
   let start: Date | null = null;
   let end: Date | null = null;
 
-  if (dateFilter === 'today') {
+  if (user.role !== 'admin') {
+  const s = new Date();
+  s.setDate(s.getDate() - 7);
+  s.setHours(0, 0, 0, 0);
+
+  const e = new Date();
+  e.setHours(23, 59, 59, 999);
+
+  start = toUTC(s);
+  end = toUTC(e);
+}
+if (user.role === 'admin') {
+if (dateFilter === 'today') {
     const s = new Date();
     s.setHours(0, 0, 0, 0);
 
@@ -200,7 +218,7 @@ async findAll(user: any, query: any) {
       end,
     });
   }
-
+}
   const take = Math.min(Number(limit), 100);
   const skip = (Number(page) - 1) * take;
 

@@ -8,6 +8,7 @@ import { Attendance } from './entities/attendance.entity';
 import { QRService } from '../qr/qr.service';
 import { formatToIST } from 'src/common/utils/localTime';
 import { StudentsService } from '../students/students.service';
+import { time } from 'console';
 
 @Injectable()
 export class AttendanceService {
@@ -53,44 +54,87 @@ export class AttendanceService {
     };
   }
 
-  async getDailyAttendance(query: any, user: any) {
-    const selectedDate =
+async getDailyAttendance(query: any, user: any) {
+  const selectedDate =
     query.date || new Date().toISOString().split('T')[0];
-    
-    if(user.role === 'admin') {
-      const data = await this.repo.find({
-    where: { date: selectedDate, locationId: query.locationId },
-    relations: ['student', 'trainer', 'location'],
-    order: { createdAt: 'DESC' },
-  });
-  const formattedData = data.map((item) => ({
-    ...item,
-    createdAt: formatToIST(item.createdAt),
-  }));
-  return {
-    date: selectedDate,
-    total: data.length,
-    data:formattedData,
-  };// Admin can view attendance for all locations
-    } else {
-      const data = await this.repo.find({
-    where: { date: selectedDate, locationId: user.locationId },
-    relations: ['student', 'trainer', 'location'],
-    order: { createdAt: 'DESC' },
-  });
-  const formattedData = data.map((item) => ({
-    ...item,
-    createdAt: formatToIST(item.createdAt),
-  }));
-  return {
-    date: selectedDate,
-    total: data.length,
-    data:formattedData,
-  };
-    }
 
-  
+  const { fromTime, toTime } = query;
+
+  const qb = this.repo
+    .createQueryBuilder('attendance')
+    .leftJoinAndSelect('attendance.student', 'student')
+    .leftJoinAndSelect('attendance.trainer', 'trainer')
+    .leftJoinAndSelect('attendance.location', 'location')
+    .where('attendance.date = :date', { date: selectedDate });
+
+  // ✅ Role-based location filter
+  if (user.role === 'admin') {
+    if (query.locationId) {
+      qb.andWhere('attendance.locationId = :locationId', {
+        locationId: query.locationId,
+      });
+    }
+  } else {
+    qb.andWhere('attendance.locationId = :locationId', {
+      locationId: user.locationId,
+    });
   }
+
+  // ✅ Time filter (range)
+ if (fromTime && toTime) {
+  const fromUTC = this.convertISTToUTC(selectedDate, fromTime);
+  const toUTC = this.convertISTToUTC(selectedDate, toTime);
+
+  qb.andWhere(
+    'attendance.createdAt BETWEEN :fromUTC AND :toUTC',
+    { fromUTC, toUTC }
+  );
+}
+
+  qb.orderBy('attendance.createdAt', 'DESC');
+
+  const data = await qb.getMany();
+
+  const formattedData = data.map((item) => ({
+    ...item,
+    createdAt: formatToIST(item.createdAt),
+  }));
+
+  return {
+    date: selectedDate,
+    total: data.length,
+    data: formattedData,
+  };
+}
+private convertISTToUTC(date: string, time: string): string {
+  if (!date || !time) {
+    throw new Error('Invalid date or time');
+  }
+
+  // Example time: "1:30 PM"
+  const [timePart, period] = time.split(' ');
+
+  if (!timePart || !period) {
+    throw new Error(`Invalid time format: ${time}`);
+  }
+
+  let [hour, minute] = timePart.split(':').map(Number);
+
+  if (isNaN(hour) || isNaN(minute)) {
+    throw new Error(`Invalid time values: ${time}`);
+  }
+
+  // ✅ Convert to 24-hour format
+  if (period === 'PM' && hour !== 12) hour += 12;
+  if (period === 'AM' && hour === 12) hour = 0;
+
+  // ✅ Create date in LOCAL (server assumed IST)
+  const localDate = new Date(date);
+  localDate.setHours(hour, minute, 0, 0);
+
+  // ✅ Convert to UTC ISO
+  return localDate.toISOString();
+}
 
   async getStudentAttendance(studentId: string, req: any) {
     if(req.user.role === 'admin') {

@@ -1,4 +1,4 @@
-import { IsNumber, IsString } from 'class-validator';
+import { IsBoolean, IsNumber, IsString } from 'class-validator';
 
 export class CreatePaymentDto {
   @IsString()
@@ -9,6 +9,9 @@ export class CreatePaymentDto {
 
   @IsString()
   paymentMode: 'cash' | 'upi' | 'online';
+
+  @IsBoolean()
+  isFamilyPack: boolean;
 
   @IsNumber()
   validityDays: number;

@@ -1,4 +1,4 @@
-import { IsDateString, IsEmail, IsString } from 'class-validator';
+import { IsArray, IsBoolean, IsDateString, IsEmail, IsOptional, IsString } from 'class-validator';
 
 export class CreateStudentDto {
   @IsString()
@@ -21,4 +21,15 @@ export class CreateStudentDto {
 
   @IsDateString()
   dob: string;
+
+  @IsBoolean()
+  @IsOptional()
+  isFamilyPack?: boolean;
+
+  @IsArray()
+  @IsOptional()
+  familyMembers?: {
+    name: string;
+    age: number;
+  }[];
 }

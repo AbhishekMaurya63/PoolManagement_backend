@@ -8,12 +8,17 @@ import { Repository } from 'typeorm';
 import { Student } from './entities/student.entity';
   import * as bcrypt from 'bcrypt';
 import { formatToIST } from 'src/common/utils/localTime';
+import { CreateStudentDto } from './dto/create-student.dto';
+import { FamilyMember } from './entities/family.entity';
 //   import { zonedTimeToUtc } from 'date-fns-tz';
 @Injectable()
 export class StudentsService {
   constructor(
     @InjectRepository(Student)
     private repo: Repository<Student>,
+
+    @InjectRepository(FamilyMember)
+private familyRepo: Repository<FamilyMember>
   ) {}
 
   generateStudentId(): string {
@@ -24,6 +29,9 @@ export class StudentsService {
     return 'REG-' + Math.floor(100000 + Math.random() * 900000);
   }
 
+  generateFamilyId(): string {
+  return 'FAM-' + Math.floor(100000 + Math.random() * 900000);
+}
 
 generatePassword(name: string, dob: string): string {
   const firstName = name.split(' ')[0];
@@ -34,25 +42,36 @@ generatePassword(name: string, dob: string): string {
 
   return `${capitalized}${year}`;
 }
-async create(dto: any) {
-    const existing = await this.repo.findOne({
-        where: { email: dto.email },
-      });
+async create(dto: CreateStudentDto) {
+  const existing = await this.repo.findOne({
+    where: { email: dto.email },
+  });
+
   if (existing) {
     throw new BadRequestException('Student with this email already exists');
   }
 
   const rawPassword = this.generatePassword(dto.name, dto.dob);
-
   const hashedPassword = await bcrypt.hash(rawPassword, 10);
 
   const student = this.repo.create({
-    ...dto,
-    dob: dto.dob,
-    password: hashedPassword,
-    registrationId: this.generateRegistrationId(),
-    studentId: this.generateStudentId(),
-  });
+  ...dto,
+  password: hashedPassword,
+  registrationId: this.generateRegistrationId(),
+  studentId: this.generateStudentId(),
+  isFamilyPack: dto.isFamilyPack || false,
+});
+
+  // 🔥 HANDLE FAMILY MEMBERS
+  if (dto.isFamilyPack && dto.familyMembers?.length) {
+    student.familyMembers = dto.familyMembers.map((member) =>
+  this.familyRepo.create({
+    name: member.name,
+    age: member.age,
+    familyId: this.generateFamilyId(),
+  }),
+);
+  }
 
   const saved = await this.repo.save(student);
 
@@ -72,6 +91,7 @@ async findAll(user: any, query: any) {
     dateFilter, // today | week | month | year
     fromDate,
     toDate,
+    isFamilyPack,
   } = query;
 
   const qb = this.repo
@@ -98,6 +118,11 @@ async findAll(user: any, query: any) {
   if (isActive !== undefined) {
     qb.andWhere('student.isActive = :isActive', {
       isActive: isActive === 'true',
+    });
+  }
+  if (isFamilyPack !== undefined) {
+    qb.andWhere('student.isFamilyPack = :isFamilyPack', {
+      isFamilyPack: isFamilyPack === 'true',
     });
   }
   const IST_OFFSET = 5.5 * 60 * 60 * 1000;
@@ -200,6 +225,12 @@ async findById(id: string) {
       relations: ['location'],
     });
     if (!student) throw new NotFoundException('Student not found');
+    if(student.isFamilyPack){
+      const familyMembers = await this.familyRepo.find({
+        where: { studentId: student.id },
+      });
+      student.familyMembers = familyMembers;
+    }
     return student;
   }
 
@@ -211,6 +242,12 @@ async findById(id: string) {
     });
 
     if (!student) throw new NotFoundException('Student not found');
+    if(student.isFamilyPack){
+      const familyMembers = await this.familyRepo.find({
+        where: { studentId: student.id },
+      });
+      student.familyMembers = familyMembers;
+    }
     return student;
   }
 
@@ -221,6 +258,12 @@ async findById(id: string) {
     });
 
     if (!student) throw new NotFoundException('Student not found');
+    if(student.isFamilyPack){
+      const familyMembers = await this.familyRepo.find({
+        where: { studentId: student.id },
+      });
+      student.familyMembers = familyMembers;
+    }
     return student;
   }
 

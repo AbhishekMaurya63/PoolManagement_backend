@@ -34,6 +34,9 @@ student: Student;
   @Column('decimal')
   amount: number;
 
+  @Column()
+  isFamilyPack: boolean;
+
 //   @Column({
 //     enum: ['cash', 'upi', 'online'],
 //   })
