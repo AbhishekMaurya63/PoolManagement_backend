@@ -64,8 +64,7 @@ async getDailyAttendance(query: any, user: any) {
     .createQueryBuilder('attendance')
     .leftJoinAndSelect('attendance.student', 'student')
     .leftJoinAndSelect('attendance.trainer', 'trainer')
-    .leftJoinAndSelect('attendance.location', 'location')
-    .where('attendance.date = :date', { date: selectedDate });
+    .leftJoinAndSelect('attendance.location', 'location');
 
   // ✅ Role-based location filter
   if (user.role === 'admin') {
@@ -80,21 +79,34 @@ async getDailyAttendance(query: any, user: any) {
     });
   }
 
-  // ✅ Time filter (range)
- if (fromTime && toTime) {
-  const fromUTC = this.convertISTToUTC(selectedDate, fromTime);
-  const toUTC = this.convertISTToUTC(selectedDate, toTime);
+  // ✅ ALWAYS filter by full day (IST → UTC)
+  let startUTC: string;
+  let endUTC: string;
+
+  if (fromTime && toTime) {
+    // 👉 Use custom time range
+    startUTC = this.convertISTToUTC(selectedDate, fromTime);
+    endUTC = this.convertISTToUTC(selectedDate, toTime);
+  } else {
+    // 👉 Full day filter (12:00 AM → 11:59 PM IST)
+    startUTC = this.convertISTToUTC(selectedDate, '12:00 AM');
+    endUTC = this.convertISTToUTC(selectedDate, '11:59 PM');
+  }
 
   qb.andWhere(
-    'attendance.createdAt BETWEEN :fromUTC AND :toUTC',
-    { fromUTC, toUTC }
+    'attendance.createdAt BETWEEN :startUTC AND :endUTC',
+    { startUTC, endUTC }
   );
-}
 
   qb.orderBy('attendance.createdAt', 'DESC');
 
+  // 🧪 Debug (optional but recommended)
+  console.log('SQL:', qb.getSql());
+  console.log('PARAMS:', qb.getParameters());
+
   const data = await qb.getMany();
 
+  // ✅ Convert UTC → IST for response
   const formattedData = data.map((item) => ({
     ...item,
     createdAt: formatToIST(item.createdAt),
@@ -174,19 +186,32 @@ private convertISTToUTC(date: string, time: string): string {
   }
 
   async getMyAttendance(query: any, user: any) {
-    const existingStudent = await this.studentService.findById(user.userId);
+  const existingStudent = await this.studentService.findById(user.userId);
 
-    if (!existingStudent) {
-      throw new BadRequestException('Student not found for current user');
-    }
-    const res= await this.repo.findAndCount({
-      where: { studentId: existingStudent.studentId },
-      relations: ['trainer'],
-      order: { createdAt: 'DESC' },
-    });
+  if (!existingStudent) {
+    throw new BadRequestException('Student not found for current user');
+  }
+
+  const [data, count] = await this.repo.findAndCount({
+    where: { studentId: existingStudent.studentId },
+    relations: ['trainer'],
+    order: { createdAt: 'DESC' },
+  });
+
+  // ✅ Convert UTC → IST and derive local date
+  const formattedData = data.map((item) => {
+    const istDateTime = formatToIST(item.createdAt); // already returns IST string
 
     return {
-      data: res[0],
-    }
+      ...item,
+      createdAt: istDateTime, 
+      date: istDateTime.split(' ')[0], 
+    };
+  });
+
+  return {
+    total: count,
+    data: formattedData,
+  };
 }
   }

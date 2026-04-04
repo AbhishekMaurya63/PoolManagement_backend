@@ -17,6 +17,7 @@ import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { UserRole } from '../users/entity/user.entity';
 import { Roles } from 'src/common/decorators/role.decorater';
 import { RolesGuard } from 'src/common/guards/roles.guard';
+import { UpdateStudentDto } from './dto/update-student';
 
 @Controller('students')
 
@@ -60,5 +61,12 @@ findMyDetails(@Req() req: any) {
   @Patch(':id/toggle-status')
   toggleStatus(@Param('id') id: string) {
     return this.service.toggleStatus(id);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.STAFF)
+  @Patch(':id')
+  updateStudent(@Param('id') id: string,@Body() dto: UpdateStudentDto) {
+    return this.service.updateStudent(id, dto);
   }
 }

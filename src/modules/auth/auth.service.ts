@@ -43,7 +43,7 @@ export class AuthService {
   }
 
   async studentLogin(dto: any) {
-    const user = await this.StudentsService.findByEmail(dto.email);
+    const user = await this.StudentsService.findByUserName(dto.userName);
     if (!user) throw new UnauthorizedException('Student not found');
     if (!user.isActive) throw new UnauthorizedException('Student is not active');
     const isMatch = await bcrypt.compare(dto.password, user.password);
@@ -52,6 +52,8 @@ export class AuthService {
     const payload = {
       sub: user.id, 
       studentId: user.studentId, 
+      userName: user.userName,
+      name: user.name,
       role: 'student',
       locationId: user.locationId,
       locationName: location.name,
@@ -63,6 +65,7 @@ export class AuthService {
         id: user.id, 
         studentId: user.studentId,
         role: 'student',
+        userName: user.userName,
         name: user.name,
         locationId: user.locationId,
         locationName: location.name,

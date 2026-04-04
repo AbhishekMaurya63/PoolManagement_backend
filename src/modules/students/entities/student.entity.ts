@@ -5,10 +5,8 @@ import {
   ManyToOne,
   JoinColumn,
   CreateDateColumn,
-  OneToMany,
 } from 'typeorm';
 import { Location } from '../../locations/entity/location.entity';
-import { FamilyMember } from './family.entity';
 
 @Entity()
 export class Student {
@@ -24,7 +22,10 @@ export class Student {
   @Column()
   name: string;
 
-  @Column({ unique: true })
+  @Column({unique: true, nullable: true})
+  userName: string;
+
+  @Column()
   email: string;
 
   @Column()
@@ -45,14 +46,6 @@ export class Student {
 
   @Column()
 dob: Date;
-  
-@Column({ default: false })
-isFamilyPack: boolean;
-
-@OneToMany(() => FamilyMember, (member) => member.student, {
-  cascade: true,
-})
-familyMembers: FamilyMember[];
 
 @Column({ select: false })
 password: string;

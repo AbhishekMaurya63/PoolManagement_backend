@@ -8,17 +8,13 @@ import { Repository } from 'typeorm';
 import { Student } from './entities/student.entity';
   import * as bcrypt from 'bcrypt';
 import { formatToIST } from 'src/common/utils/localTime';
-import { CreateStudentDto } from './dto/create-student.dto';
-import { FamilyMember } from './entities/family.entity';
+import { UpdateStudentDto } from './dto/update-student';
 //   import { zonedTimeToUtc } from 'date-fns-tz';
 @Injectable()
 export class StudentsService {
   constructor(
     @InjectRepository(Student)
     private repo: Repository<Student>,
-
-    @InjectRepository(FamilyMember)
-private familyRepo: Repository<FamilyMember>
   ) {}
 
   generateStudentId(): string {
@@ -29,9 +25,6 @@ private familyRepo: Repository<FamilyMember>
     return 'REG-' + Math.floor(100000 + Math.random() * 900000);
   }
 
-  generateFamilyId(): string {
-  return 'FAM-' + Math.floor(100000 + Math.random() * 900000);
-}
 
 generatePassword(name: string, dob: string): string {
   const firstName = name.split(' ')[0];
@@ -42,36 +35,25 @@ generatePassword(name: string, dob: string): string {
 
   return `${capitalized}${year}`;
 }
-async create(dto: CreateStudentDto) {
-  const existing = await this.repo.findOne({
-    where: { email: dto.email },
-  });
-
+async create(dto: any) {
+    const existing = await this.repo.findOne({
+        where: { userName: dto.userName },
+      });
   if (existing) {
-    throw new BadRequestException('Student with this email already exists');
+    throw new BadRequestException('UserName already exists');
   }
 
   const rawPassword = this.generatePassword(dto.name, dto.dob);
+
   const hashedPassword = await bcrypt.hash(rawPassword, 10);
 
   const student = this.repo.create({
-  ...dto,
-  password: hashedPassword,
-  registrationId: this.generateRegistrationId(),
-  studentId: this.generateStudentId(),
-  isFamilyPack: dto.isFamilyPack || false,
-});
-
-  // 🔥 HANDLE FAMILY MEMBERS
-  if (dto.isFamilyPack && dto.familyMembers?.length) {
-    student.familyMembers = dto.familyMembers.map((member) =>
-  this.familyRepo.create({
-    name: member.name,
-    age: member.age,
-    familyId: this.generateFamilyId(),
-  }),
-);
-  }
+    ...dto,
+    dob: dto.dob,
+    password: hashedPassword,
+    registrationId: this.generateRegistrationId(),
+    studentId: this.generateStudentId(),
+  });
 
   const saved = await this.repo.save(student);
 
@@ -91,7 +73,6 @@ async findAll(user: any, query: any) {
     dateFilter, // today | week | month | year
     fromDate,
     toDate,
-    isFamilyPack,
   } = query;
 
   const qb = this.repo
@@ -111,18 +92,13 @@ async findAll(user: any, query: any) {
   }
   if (search) {
     qb.andWhere(
-      `(student.name LIKE :search OR student.phone LIKE :search OR student.email LIKE :search)`,
+      `(student.name LIKE :search OR student.phone LIKE :search OR student.email LIKE :search OR student.registrationId LIKE :search OR student.userName LIKE :search OR student.studentId LIKE :search)`,
       { search: `%${search}%` },
     );
   }
   if (isActive !== undefined) {
     qb.andWhere('student.isActive = :isActive', {
       isActive: isActive === 'true',
-    });
-  }
-  if (isFamilyPack !== undefined) {
-    qb.andWhere('student.isFamilyPack = :isFamilyPack', {
-      isFamilyPack: isFamilyPack === 'true',
     });
   }
   const IST_OFFSET = 5.5 * 60 * 60 * 1000;
@@ -225,12 +201,6 @@ async findById(id: string) {
       relations: ['location'],
     });
     if (!student) throw new NotFoundException('Student not found');
-    if(student.isFamilyPack){
-      const familyMembers = await this.familyRepo.find({
-        where: { studentId: student.id },
-      });
-      student.familyMembers = familyMembers;
-    }
     return student;
   }
 
@@ -242,12 +212,6 @@ async findById(id: string) {
     });
 
     if (!student) throw new NotFoundException('Student not found');
-    if(student.isFamilyPack){
-      const familyMembers = await this.familyRepo.find({
-        where: { studentId: student.id },
-      });
-      student.familyMembers = familyMembers;
-    }
     return student;
   }
 
@@ -258,12 +222,6 @@ async findById(id: string) {
     });
 
     if (!student) throw new NotFoundException('Student not found');
-    if(student.isFamilyPack){
-      const familyMembers = await this.familyRepo.find({
-        where: { studentId: student.id },
-      });
-      student.familyMembers = familyMembers;
-    }
     return student;
   }
 
@@ -283,11 +241,17 @@ async findById(id: string) {
       .execute();
   }
 
+  async updateStudent(id: string, dto: UpdateStudentDto) {
+    const student = await this.repo.findOne({ where: { id } });
+    if (!student) throw new NotFoundException('Student not found');
+    Object.assign(student, dto);
+    return this.repo.save(student);
+  }
 
-  async findByEmail(email: string) {
+  async findByUserName(userName: string) {
     return this.repo.createQueryBuilder('student')
     .addSelect('student.password')
-    .where('student.email = :email', { email })
+    .where('student.userName = :userName', { userName })
     .getOne();;
   }
 }

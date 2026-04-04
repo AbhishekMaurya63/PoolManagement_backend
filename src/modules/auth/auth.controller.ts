@@ -1,6 +1,7 @@
 import { Body, Controller, Post, UnauthorizedException } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
+import { StudentLoginDto } from './dto/studentLogin.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -8,11 +9,10 @@ export class AuthController {
 
   @Post('login')
   async login(@Body() dto: LoginDto) {
-
     return this.authService.login(dto);
   }
   @Post('student/login')
-  async studentLogin(@Body() dto: LoginDto) {
+  async studentLogin(@Body() dto: StudentLoginDto) {
     return this.authService.studentLogin(dto);
   }
   

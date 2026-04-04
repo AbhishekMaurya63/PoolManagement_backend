@@ -1,9 +1,6 @@
 import { IsDateString, IsEmail, IsString } from 'class-validator';
 
-export class CreateStudentDto {
-
-  @IsString()
-  userName: string;
+export class UpdateStudentDto {
 
   @IsString()
   name: string;

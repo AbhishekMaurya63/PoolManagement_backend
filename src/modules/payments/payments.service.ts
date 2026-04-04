@@ -91,7 +91,6 @@ async findAll(user: any, query: any) {
     studentId,
     paymentMode,
     isActive,
-    isFamilyPack,
     page = 1,
     limit = 10,
     dateFilter,
@@ -119,7 +118,7 @@ async findAll(user: any, query: any) {
   }
   if (search) {
     qb.andWhere(
-      `(student.name LIKE :search OR student.phone LIKE :search)`,
+      `(student.name LIKE :search OR student.phone LIKE :search OR student.email LIKE :search OR student.registrationId LIKE :search OR student.userName LIKE :search)`,
       { search: `%${search}%` },
     );
   }
@@ -128,11 +127,6 @@ async findAll(user: any, query: any) {
       isActive: isActive === 'true',
     });
   }
-  if (isFamilyPack !== undefined) {
-    qb.andWhere('payment.isFamilyPack = :isFamilyPack', {
-      isFamilyPack: isFamilyPack === 'true',
-    });
-   }
 
   const IST_OFFSET = 5.5 * 60 * 60 * 1000;
 
