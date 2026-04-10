@@ -53,6 +53,9 @@ password: string;
   @Column({ default: false })
   isActive: boolean;
 
+  @Column({ default: true })
+  termsAccepted: boolean;
+
   @CreateDateColumn()
   createdAt: Date;
 }

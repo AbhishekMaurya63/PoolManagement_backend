@@ -1,28 +1,31 @@
-import { IsDateString, IsEmail, IsString } from 'class-validator';
+import { IsDateString, IsEmail, IsString,IsBoolean } from 'class-validator';
 
 export class CreateStudentDto {
 
   @IsString()
-  userName: string;
+  userName?: string;
 
   @IsString()
-  name: string;
+  name?: string;
 
   @IsEmail()
-  email: string;
+  email?: string;
 
   @IsString()
-  phone: string;
+  phone?: string;
 
   @IsString()
-  photo: string;
+  photo?: string;
 
   @IsString()
-  aadhaarId: string;
+  aadhaarId?: string;
 
   @IsString()
-  locationId: string;
+  locationId?: string;
 
   @IsDateString()
-  dob: string;
+  dob?: string;
+
+  @IsBoolean()
+  termsAccepted?:Boolean;
 }
