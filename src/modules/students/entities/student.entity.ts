@@ -5,10 +5,12 @@ import {
   ManyToOne,
   JoinColumn,
   CreateDateColumn,
+  Unique,
 } from 'typeorm';
 import { Location } from '../../locations/entity/location.entity';
 
 @Entity()
+@Unique(['name', 'email'])
 export class Student {
   @PrimaryGeneratedColumn('uuid')
   id: string;

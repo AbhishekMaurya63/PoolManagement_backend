@@ -7,6 +7,7 @@ import {
   UseGuards,
   Query,
   Req,
+  Patch,
 } from '@nestjs/common';
 
 import { PaymentsService } from './payments.service';
@@ -50,5 +51,10 @@ findAll(@Req() req: any, @Query() query: any) {
 @Get('getYourPayments/me')
 findMyPayments(@Req() req: any) {
   return this.service.findMyPayments(req.user.userId);
+}
+
+@Patch(':id')
+updatePayment(@Param('id') id: string,@Body() dto:any){
+  return this.service.updateActivePayments(id,dto)
 }
 }

@@ -8,6 +8,7 @@ import {
   Req,
   UseGuards,
   Query,
+  Delete,
 } from '@nestjs/common';
 
 import { StudentsService } from './students.service';
@@ -68,5 +69,13 @@ findMyDetails(@Req() req: any) {
   @Patch(':id')
   updateStudent(@Param('id') id: string,@Body() dto: UpdateStudentDto) {
     return this.service.updateStudent(id, dto);
+  }
+
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.STAFF)
+  @Delete(':id')
+  deleteStudent(@Param('id') id: string) {
+    return this.service.deleteStudent(id);
   }
 }

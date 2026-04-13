@@ -57,6 +57,9 @@ student: Student;
   @Column({ default: true })
   isActive: boolean;
 
+  @Column({default: false})
+  alternative:boolean
+
   @CreateDateColumn()
   createdAt: Date;
 }

@@ -36,12 +36,26 @@ generatePassword(name: string, dob: string): string {
   return `${capitalized}${year}`;
 }
 async create(dto: any) {
-    const existing = await this.repo.findOne({
-        where: { userName: dto.userName },
-      });
-  if (existing) {
-    throw new BadRequestException('UserName already exists');
+   const existing = await this.repo
+  .createQueryBuilder('user')
+  .where('user.userName = :userName', { userName: dto.userName })
+  .orWhere('user.name = :name AND user.email = :email', {
+    name: dto.name,
+    email: dto.email,
+  })
+  .getOne();
+
+if (existing) {
+  if (existing.userName === dto.userName) {
+    throw new BadRequestException('Username already exists');
   }
+
+  if (existing.name === dto.name && existing.email === dto.email) {
+    throw new BadRequestException(
+      'User with same name and email already registered'
+    );
+  }
+}
 
   const rawPassword = this.generatePassword(dto.name, dto.dob);
 
@@ -254,4 +268,36 @@ async findById(id: string) {
     .where('student.userName = :userName', { userName })
     .getOne();;
   }
+
+  async deleteStudent(id: string) {
+  const student = await this.repo.findOne({
+    where: { id },
+  });
+
+  if (!student) {
+    throw new NotFoundException('Student not found');
+  }
+
+  try {
+    // 2️⃣ Try delete
+    await this.repo.delete(id);
+
+    return {
+      success: true,
+      message: 'Student deleted successfully',
+    };
+  } catch (error) {
+    // 3️⃣ Handle FK constraint error
+    if (
+      error.code === '23503' || // PostgreSQL foreign key violation
+      error.code === 'ER_ROW_IS_REFERENCED_2' // MySQL
+    ) {
+      throw new BadRequestException(
+        'Cannot delete student. It is linked with other data (payments, QR, etc).'
+      );
+    }
+
+    throw error;
+  }
+}
 }

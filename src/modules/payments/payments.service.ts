@@ -7,12 +7,15 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Payment } from './schemas/payment.entity';
 import { StudentsService } from '../students/students.service';
+import { QR } from '../qr/entities/qr.entity';
 
 @Injectable()
 export class PaymentsService {
   constructor(
     @InjectRepository(Payment)
     private repo: Repository<Payment>,
+    @InjectRepository(QR)
+    private qrRepo: Repository<QR>,
     private studentService: StudentsService,
   ) {}
   generateStudentId(): string {
@@ -260,5 +263,30 @@ async findMyPayments(user: string) {
   });
 
   return payments;
+}
+
+async updateActivePayments(id:string,dto:any){
+  const exist = await this.repo.findOne({where:{id}})
+  if(!exist){
+    throw new NotFoundException("Payment Not found")
+  }
+  if(!exist.isActive){
+    throw new BadRequestException("Payment Expired")
+  }
+const validFromDate = new Date(exist.validFrom);
+
+const validTill = new Date(validFromDate);
+validTill.setDate(validTill.getDate() + dto.validityDays);
+  exist.amount = dto.amount;
+  exist.validTill=validTill;
+  exist.screenshot=dto.screenshot
+  exist.alternative=dto.alternative
+  const updatedPayment = await this.repo.save(exist)
+  const existQR = await this.qrRepo.findOne({where:{paymentId:exist.id}})
+  if(existQR){
+    existQR.expiry=validTill
+    await this.qrRepo.save(existQR)
+  }
+  return updatedPayment
 }
 }
