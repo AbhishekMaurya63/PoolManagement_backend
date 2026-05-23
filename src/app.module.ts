@@ -12,6 +12,7 @@ import { PaymentsModule } from './modules/payments/payments.module';
 import { AttendanceModule } from './modules/attendance/attendance.module';
 import { QRModule } from './modules/qr/qr.module';
 import { StatsModule } from './modules/stats/stats.module';
+import { MailModule } from './common/mail/mail.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -27,6 +28,7 @@ import { StatsModule } from './modules/stats/stats.module';
   autoLoadEntities: true,
   synchronize: true, // ⚠️ only for development
 }),
+    MailModule,
     AuthModule,
     LocationsModule,
     UsersModule,

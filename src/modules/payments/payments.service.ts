@@ -2,22 +2,70 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  Logger,
+  OnModuleInit,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, LessThan } from 'typeorm';
 import { Payment } from './schemas/payment.entity';
 import { StudentsService } from '../students/students.service';
 import { QR } from '../qr/entities/qr.entity';
+import { MailService } from '../../common/mail/mail.service';
 
 @Injectable()
-export class PaymentsService {
+export class PaymentsService implements OnModuleInit {
+  private readonly logger = new Logger(PaymentsService.name);
+
   constructor(
     @InjectRepository(Payment)
     private repo: Repository<Payment>,
     @InjectRepository(QR)
     private qrRepo: Repository<QR>,
     private studentService: StudentsService,
+    private mailService: MailService,
   ) {}
+
+  async onModuleInit() {
+    await this.checkExpiredPaymentsAndNotify();
+    setInterval(() => {
+      this.checkExpiredPaymentsAndNotify().catch((error) =>
+        this.logger.error('Failed to run expired payment notifier', error),
+      );
+    }, 1000 * 60 * 60); // every hour
+  }
+
+  private async checkExpiredPaymentsAndNotify() {
+    const now = new Date();
+    const expiredPayments = await this.repo.find({
+      where: {
+        isActive: true,
+        validTill: LessThan(now),
+      },
+      relations: ['student'],
+    });
+
+    for (const payment of expiredPayments) {
+      payment.isActive = false;
+      await this.repo.save(payment);
+
+      if (payment.student?.isActive) {
+        await this.sendPaymentExpiryEmail(payment);
+      }
+    }
+  }
+
+  private async sendPaymentExpiryEmail(payment: Payment) {
+    if (!payment.student || !payment.student.email) {
+      return;
+    }
+
+    const validTill = new Date(payment.validTill).toLocaleDateString();
+    const subject = 'Payment Expired';
+    const text = `Hello ${payment.student.name},\n\nYour membership payment expired on ${validTill}. Please renew to continue access to the pool facilities.\n\nThank you.`;
+    const html = `<p>Hello ${payment.student.name},</p><p>Your membership payment expired on <strong>${validTill}</strong>.</p><p>Please renew to continue access to pool facilities.</p><p>Thank you.</p>`;
+
+    await this.mailService.sendMail(payment.student.email, subject, text, html);
+  }
   generateStudentId(): string {
     return 'STU-' + Date.now();
   }
@@ -81,6 +129,10 @@ export class PaymentsService {
     if (new Date() > new Date(payment.validTill)) {
       payment.isActive = false;
       await this.repo.save(payment);
+
+      if (payment.student?.isActive) {
+        await this.sendPaymentExpiryEmail(payment);
+      }
 
       throw new BadRequestException('Payment expired');
     }
